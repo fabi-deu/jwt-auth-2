@@ -1,0 +1,12 @@
+[package]
+name = "jwt-auth-2"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+doc = true
+path = "src/lib.rs"
+name = "jwt_auth_lib"
+
+
+[dependencies]
