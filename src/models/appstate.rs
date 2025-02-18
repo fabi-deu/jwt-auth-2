@@ -1,13 +1,12 @@
-use std::ops::Deref;
-use std::sync::Arc;
 use axum::extract::FromRef;
 use axum_extra::extract::cookie::Key;
-use sqlx::{Pool, Postgres};
-use tokio::sync::Mutex;
+use sqlx::{Pool, Sqlite};
+use std::ops::Deref;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct Appstate {
-    pub(crate) db: Arc<Mutex<Pool<Postgres>>>,
+    pub(crate) db: Arc<Pool<Sqlite>>,
     pub(crate) jwt_secret: String,
     pub(crate) cookie_secret: Key,
 }
@@ -16,9 +15,9 @@ pub struct Appstate {
 pub struct AppstateWrapper(pub Arc<Appstate>);
 
 impl Appstate {
-    pub fn new(db: Pool<Postgres>, jwt_secret: String, cookie_secret: Key) -> Self {
+    pub fn new(db: Pool<Sqlite>, jwt_secret: String, cookie_secret: Key) -> Self {
         Self {
-            db: Arc::new(Mutex::new(db)),
+            db: Arc::new(db),
             jwt_secret,
             cookie_secret,
         }

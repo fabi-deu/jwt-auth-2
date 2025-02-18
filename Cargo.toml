@@ -13,7 +13,7 @@ name = "jwt_auth_lib"
 tokio = { version = "1.43.0", features = ["full"] }
 axum =  { version = "0.8.1", features = ["tokio", "tower-log", "json", "macros"] }
 serde = { version = "1.0.217", features = ["derive"] }
-sqlx = { version = "0.8.3", features = ["macros", "postgres", "runtime-tokio-native-tls", "sqlx-postgres"] }
+sqlx = { version = "0.8.3", features = ["macros", "runtime-tokio-native-tls", "sqlite", "sqlx-sqlite"] }
 dotenv = "0.15.0"
 uuid = { version = "1.12.1", features = ["serde", "v4"] }
 chrono = "0.4.39"
@@ -24,3 +24,5 @@ tower = "0.5.2"
 async-trait = "0.1.85"
 axum-extra = { version = "0.10.0", features = ["cookie", "cookie-private", "form"] }
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["tracing", "tracing-log", "fmt"] }
