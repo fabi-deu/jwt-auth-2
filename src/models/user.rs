@@ -35,7 +35,7 @@ impl User {
     }
 
 
-    pub async fn write_to_db(&self, conn: PoolConnection<Sqlite>) -> Result<(), Box<dyn Error>> {
+    pub async fn write_to_db(&self, conn: &PoolConnection<Sqlite>) -> Result<(), Box<dyn Error>> {
         let query =
             r"INSERT INTO users (uuid, username, email, password, permission, tokenversion, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)";
 
