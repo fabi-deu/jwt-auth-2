@@ -14,5 +14,12 @@ impl Permission {
             _ => None,
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Permission::USER => "USER",
+            Permission::ADMIN => "ADMIN",
+        }.to_string()
+    }
 }
 
