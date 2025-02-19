@@ -3,7 +3,9 @@ use axum::http::StatusCode;
 use axum::Json;
 use axum_extra::extract::PrivateCookieJar;
 use serde::{Deserialize, Serialize};
+use sqlx::Error;
 use crate::models::appstate::{AppstateWrapper};
+use crate::models::user::User;
 use crate::util::hashing::hash_password;
 use crate::util::validation::{valid_password, valid_username};
 
@@ -31,12 +33,41 @@ async fn create_new_user(
         return Err((StatusCode::BAD_REQUEST, "Bad password (do specific checks on frontend)"))
     }
 
+    // ! TODO email validation
+
     // hash password and create user model
     let hashed_password = match hash_password(&body.password).await {
         Ok(o) => o,
         Err(_) => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to hash password")),
     };
 
+    let user = User::new(body.username, hashed_password, body.email);
+
+    // add user to db
+    let conn = match &appstate.db.acquire().await {
+        Ok(o) => o,
+        _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to establish pool connection"))
+    };
+
+    let query_result = user.write_to_db(conn);
+    match query_result {
+        Ok(_) => {},
+        Err(Error::Database(db_err)) => {
+            if let Some(err_code) = db_err.code() {
+                if err_code != "2067" {
+                    return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
+                }
+                if db_err.message().contains("users.email") {
+                    return Err((StatusCode::BAD_REQUEST, "E-mail is already in use"))
+                } else if db_err.message().contains("users.username") {
+                    return Err((StatusCode::BAD_REQUEST, "Username is already taken"))
+                }
+                // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen?
+            }
+        }
+    }
+
+    // set up cookies
 
 
     Ok((StatusCode::CREATED, jar))
