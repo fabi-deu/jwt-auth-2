@@ -6,6 +6,7 @@ use axum_extra::extract::cookie::Key;
 use dotenv::dotenv;
 use sqlx::pool::PoolOptions;
 use sqlx::{Pool, Sqlite};
+use sqlx::sqlite::SqlitePoolOptions;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
@@ -30,7 +31,9 @@ async fn main() {
     info!("Successfully loaded environment variables ✔");
 
     // sqlite3 connection
-    let pool: Pool<Sqlite> = PoolOptions::new().connect(&sqlite_url).await.unwrap();
+    let pool: Pool<Sqlite> = SqlitePoolOptions::new()
+        .max_connections(1024)
+        .connect(&sqlite_url).await.unwrap();
     info!("Successfully connected to sqlite ✔");
 
     let appstate: AppstateWrapper = AppstateWrapper(Arc::new(Appstate::new(

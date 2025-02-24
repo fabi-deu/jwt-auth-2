@@ -53,21 +53,20 @@ async fn create_new_user(
     match query_result {
         Ok(_) => {},
         Err(Error::Database(db_err)) => {
-            if let Some(err_code) = db_err.code() {
-                if err_code != "2067" {
-                    return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
-                }
-                if db_err.message().contains("users.email") {
-                    return Err((StatusCode::BAD_REQUEST, "E-mail is already in use"))
-                } else if db_err.message().contains("users.username") {
-                    return Err((StatusCode::BAD_REQUEST, "Username is already taken"))
-                }
-                // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen?
+            if !db_err.is_unique_violation() || !db_err.is_foreign_key_violation() {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
             }
+
+            if db_err.message().contains("email") {
+                return Err((StatusCode::BAD_REQUEST, "E-mail is already in use"))
+            } else if db_err.message().contains("username") {
+                return Err((StatusCode::BAD_REQUEST, "Username is already taken"))
+            }
+            // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen?
         }
     }
 
-    // set up cookies
+    // set cookies
 
 
     Ok((StatusCode::CREATED, jar))
