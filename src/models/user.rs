@@ -1,10 +1,9 @@
-use std::sync::Arc;
 use crate::models::user_permission::Permission;
 use argon2::PasswordHash;
-use serde::{Deserialize, Serialize};
 use serde::de::Error;
-use sqlx::{Pool, Sqlite};
+use serde::{Deserialize, Serialize};
 use sqlx::pool::PoolConnection;
+use sqlx::Sqlite;
 use uuid::Uuid;
 
 

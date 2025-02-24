@@ -15,13 +15,13 @@ axum =  { version = "0.8.1", features = ["tokio", "tower-log", "json", "macros"]
 serde = { version = "1.0.217", features = ["derive"] }
 sqlx = { version = "0.8.3", features = ["macros", "runtime-tokio-native-tls", "sqlite", "sqlx-sqlite", "_sqlite"] }
 dotenv = "0.15.0"
-uuid = { version = "1.12.1", features = ["serde", "v4"] }
+uuid = { version = "1.14.0", features = ["serde", "v4"] }
 chrono = "0.4.39"
 argon2 = "0.5.3"
-jsonwebtoken = "9.3.0"
+jsonwebtoken = "9.3.1"
 axum-macros = "0.5.0"
 tower = "0.5.2"
-async-trait = "0.1.85"
+async-trait = "0.1.86"
 axum-extra = { version = "0.10.0", features = ["cookie", "cookie-private", "form"] }
 tower-http = { version = "0.6.2", features = ["trace", "cors"] }
 tracing = "0.1.41"

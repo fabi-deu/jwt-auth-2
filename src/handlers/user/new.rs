@@ -49,8 +49,8 @@ async fn create_new_user(
         _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to establish pool connection"))
     };
 
-    let query_result = user.write_to_db(conn);
-    match query_result {
+    let query = user.write_to_db(conn);
+    match query.await {
         Ok(_) => {},
         Err(Error::Database(db_err)) => {
             if !db_err.is_unique_violation() || !db_err.is_foreign_key_violation() {
@@ -62,8 +62,10 @@ async fn create_new_user(
             } else if db_err.message().contains("username") {
                 return Err((StatusCode::BAD_REQUEST, "Username is already taken"))
             }
-            // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen?
+            // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen
+
         }
+        _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
     }
 
     // set cookies
