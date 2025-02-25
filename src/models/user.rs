@@ -21,7 +21,7 @@ pub struct User {
 
 
 impl User {
-    pub fn new(username: String, password: PasswordHash, email: String) -> Self {
+    pub fn new(username: String, password: PasswordHash<'static>, email: String) -> Self {
         Self {
             uuid: Uuid::new_v4(),
             username,
@@ -36,7 +36,7 @@ impl User {
 
     pub async fn write_to_db(&self, conn: &PoolConnection<Sqlite>) -> Result<(), Box<dyn Error>> {
         let query =
-            r"INSERT INTO users (uuid, username, email, password, permission, tokenversion, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7)";
+            r"INSERT INTO users (uuid, username, email, password, permission, tokenversion, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         let _ = sqlx::query(query)
             .bind(&self.uuid.to_string())
