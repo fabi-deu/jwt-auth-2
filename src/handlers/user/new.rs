@@ -1,3 +1,4 @@
+use argon2::PasswordHash;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
@@ -41,15 +42,17 @@ async fn create_new_user(
         Err(_) => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to hash password")),
     };
 
+    // create user
     let user = User::new(body.username, hashed_password, body.email);
 
     // add user to db
-    let conn = match &appstate.db.acquire().await {
+    let aq = appstate.db.acquire();
+    let conn = match aq.await {
         Ok(o) => o,
         _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to establish pool connection"))
     };
 
-    let query = user.write_to_db(conn);
+    let query = user.write_to_db(&conn);
     match query.await {
         Ok(_) => {},
         Err(Error::Database(db_err)) => {
@@ -58,7 +61,7 @@ async fn create_new_user(
             }
 
             if db_err.message().contains("email") {
-                return Err((StatusCode::BAD_REQUEST, "E-mail is already in use"))
+                return Err((StatusCode::BAD_REQUEST, "Email is already in use"))
             } else if db_err.message().contains("username") {
                 return Err((StatusCode::BAD_REQUEST, "Username is already taken"))
             }
