@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use sqlx::{Decode, Encode, Type};
 
-#[derive(Clone, Serialize, Debug, Deserialize)]
+#[derive(Clone, Serialize, Debug, Deserialize, Type, Decode)]
 pub enum Permission {
     USER,
     ADMIN
