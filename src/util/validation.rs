@@ -1,5 +1,3 @@
-use serde::de::Error;
-
 
 /// Validates username based on contained chars and length  \
 /// *allowed chars*:                                        \

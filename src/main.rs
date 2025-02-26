@@ -1,13 +1,14 @@
 use std::env;
 use std::sync::Arc;
 use axum::Router;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum_extra::extract::cookie::Key;
 use dotenv::dotenv;
-use sqlx::pool::PoolOptions;
 use sqlx::{Pool, Sqlite};
+use sqlx::sqlite::SqlitePoolOptions;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use jwt_auth_lib::handlers::user::new::create_new_user;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
 
 #[tokio::main]
@@ -30,7 +31,9 @@ async fn main() {
     info!("Successfully loaded environment variables ✔");
 
     // sqlite3 connection
-    let pool: Pool<Sqlite> = PoolOptions::new().connect(&sqlite_url).await.unwrap();
+    let pool: Pool<Sqlite> = SqlitePoolOptions::new()
+        .max_connections(1024)
+        .connect(&sqlite_url).await.unwrap();
     info!("Successfully connected to sqlite ✔");
 
     let appstate: AppstateWrapper = AppstateWrapper(Arc::new(Appstate::new(
@@ -38,7 +41,8 @@ async fn main() {
     )));
 
     let app = Router::new()
-        .route("/", get(|| async { "Hello World" }));
+        .route("/", get(|| async { "Hello World" }))
+        .route("/new", post(create_new_user)).with_state(appstate);
 
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", &port)).await.unwrap();
