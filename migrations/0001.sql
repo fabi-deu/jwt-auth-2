@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE IF NOT EXISTS "users" (
     uuid TEXT NOT NULL PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS "user" (
     permission TEXT NOT NULL,
     tokenversion INTEGER DEFAULT 0,
 
-    timestamp INTEGER DEFAULT unixepoch()
+    timestamp INTEGER DEFAULT (strftime('%s', 'now'))
 );

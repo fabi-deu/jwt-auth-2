@@ -1,4 +1,3 @@
-use argon2::PasswordHash;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
@@ -19,7 +18,7 @@ pub struct Body {
 
 /// Handler for creating new users
 #[axum_macros::debug_handler]
-async fn create_new_user(
+pub async fn create_new_user(
     State(appstate_wrapper): State<AppstateWrapper>,
     jar: PrivateCookieJar,
     Json(body): Json<Body>
@@ -33,7 +32,6 @@ async fn create_new_user(
     if !valid_password(&body.password)  {
         return Err((StatusCode::BAD_REQUEST, "Bad password (do specific checks on frontend)"))
     }
-
     // ! TODO email validation
 
     // hash password and create user model
@@ -46,16 +44,11 @@ async fn create_new_user(
     let user = User::new(body.username, hashed_password, body.email);
 
     // add user to db
-    let aq = appstate.db.acquire();
-    let conn = match aq.await {
-        Ok(o) => o,
-        _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to establish pool connection"))
-    };
-
-    let query = user.write_to_db(&conn);
+    let query = user.write_to_db(&appstate.db);
     match query.await {
         Ok(_) => {},
         Err(Error::Database(db_err)) => {
+            eprintln!("{}", &db_err.message());
             if !db_err.is_unique_violation() || !db_err.is_foreign_key_violation() {
                 return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
             }

@@ -1,12 +1,11 @@
 use crate::models::user_permission::Permission;
-use argon2::PasswordHash;
 use serde::{Deserialize, Serialize};
-use sqlx::pool::PoolConnection;
-use sqlx::Sqlite;
+use sqlx::{Executor, FromRow, Pool, Sqlite};
+use std::sync::Arc;
 use uuid::Uuid;
 
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, FromRow)]
 pub struct User {
     pub(crate) uuid: Uuid,
     pub(crate) username: String,
@@ -33,7 +32,7 @@ impl User {
     }
 
 
-    pub async fn write_to_db(&self, conn: &PoolConnection<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn write_to_db(&self, conn: &Arc<Pool<Sqlite>>) -> Result<(), sqlx::Error> {
         let query =
             r"INSERT INTO users (uuid, username, email, password, permission, tokenversion, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -43,8 +42,8 @@ impl User {
             .bind(&self.email)
             .bind(&self.password)
             .bind(&self.permission.to_string())
-            .bind(&self.tokenversion)
-            .bind(&self.timestamp).execute(conn.as_ref()).await?;
+            .bind(self.tokenversion.clone() as u32)
+            .bind(self.timestamp.clone() as u32).execute(conn.as_ref()).await?;
 
         Ok(())
     }
