@@ -1,7 +1,9 @@
+use std::sync::Arc;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Sqlite};
 use uuid::Uuid;
-
+use crate::models::user::User;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct Claims {
@@ -32,5 +34,10 @@ impl Claims {
         }
 
         true
+    }
+
+    /// `alias` - [`User::from_claims`]
+    pub async fn get_user(&self, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
+        User::from_claims(self.clone(), conn).await
     }
 }

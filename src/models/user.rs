@@ -77,6 +77,8 @@ impl User {
         Ok(Some(user))
     }
 
+    /// gets user from db with uuid form claims
+    /// DOES NOT CHECK FOR VALIDATION
     pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE uuid = ?";
         let user = sqlx::query_as::<_, User>(query)

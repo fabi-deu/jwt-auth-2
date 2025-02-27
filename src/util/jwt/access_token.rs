@@ -22,4 +22,8 @@ impl AccessToken {
             token,
         })
     }
+
+    pub fn refresh_token() -> () {
+        todo!()
+    }
 }
