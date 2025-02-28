@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::models::user::User;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct Claims {
+pub struct Claims {
     pub(crate) sub: Uuid,
     pub(crate) tokenversion: u64,
     pub(crate) iat: u64,
@@ -15,7 +15,7 @@ pub(crate) struct Claims {
 
 
 impl Claims {
-
+    /// returns Claims
     /// * `exp` - Describes in how many minutes the token will expire
     pub fn new(sub: Uuid, tokenversion: u64, exp: u64) -> Self {
         Self {
@@ -25,6 +25,17 @@ impl Claims {
             exp: Utc::now().timestamp() as u64 + exp*60,
         }
     }
+    /// returns claims made for user
+    /// * `exp` - Describes in how many minutes the token will expire
+    pub fn from_user(user: &User, exp: u64) -> Self {
+        Self {
+            sub: user.uuid,
+            tokenversion: user.tokenversion,
+            iat: Utc::now().timestamp() as u64,
+            exp: Utc::now().timestamp() as u64 + exp*60,
+        }
+    }
+
     pub fn valid_dates(&self) -> bool {
         if self.exp < Utc::now().timestamp() as u64 {
             return false

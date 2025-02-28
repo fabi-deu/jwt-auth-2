@@ -13,7 +13,7 @@ name = "jwt_auth_lib"
 tokio = { version = "1.43.0", features = ["full"] }
 axum =  { version = "0.8.1", features = ["tokio", "tower-log", "json", "macros"] }
 serde = { version = "1.0.217", features = ["derive"] }
-sqlx = { version = "0.8.3", features = ["macros", "runtime-tokio-native-tls", "sqlite", "sqlx-sqlite", "_sqlite", "sqlx-macros"] }
+sqlx = { version = "0.8.3", features = ["macros", "runtime-tokio-native-tls", "sqlite", "sqlx-sqlite", "_sqlite", "sqlx-macros", "uuid"] }
 dotenv = "0.15.0"
 uuid = { version = "1.15.0", features = ["serde", "v4"] }
 chrono = "0.4.40"

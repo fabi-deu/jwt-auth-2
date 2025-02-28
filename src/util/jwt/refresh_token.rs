@@ -13,7 +13,7 @@ impl RefreshToken {
     /// generates refresh-token from claims with default header and given secret
     /// DOES NOT CHECK FOR VALIDATION
     /// exp should be long
-    pub fn from_claims(claims: Claims, jwt_secret: String) -> jsonwebtoken::errors::Result<Self> {
+    pub fn from_claims(claims: Claims, jwt_secret: &String) -> jsonwebtoken::errors::Result<Self> {
         // generate token with default headers
         let token =
             encode(&Header::default(), &claims, &EncodingKey::from_secret(jwt_secret.as_bytes()))?;
