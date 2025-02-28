@@ -1,6 +1,7 @@
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
+use axum_extra::extract::cookie::{Cookie, SameSite};
 use axum_extra::extract::PrivateCookieJar;
 use serde::{Deserialize, Serialize};
 use sqlx::Error;
@@ -20,7 +21,7 @@ pub struct Body {
 #[axum_macros::debug_handler]
 pub async fn create_new_user(
     State(appstate_wrapper): State<AppstateWrapper>,
-    jar: PrivateCookieJar,
+    mut jar: PrivateCookieJar,
     Json(body): Json<Body>
 ) -> Result<(StatusCode, PrivateCookieJar), (StatusCode, &'static str)> {
     let appstate = appstate_wrapper.0;
@@ -48,15 +49,12 @@ pub async fn create_new_user(
     match query.await {
         Ok(_) => {},
         Err(Error::Database(db_err)) => {
-            eprintln!("{}", &db_err.message());
-            if !db_err.is_unique_violation() || !db_err.is_foreign_key_violation() {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
-            }
-
-            if db_err.message().contains("email") {
-                return Err((StatusCode::BAD_REQUEST, "Email is already in use"))
+            return if db_err.message().contains("email") {
+                Err((StatusCode::BAD_REQUEST, "Email is already in use"))
             } else if db_err.message().contains("username") {
-                return Err((StatusCode::BAD_REQUEST, "Username is already taken"))
+                Err((StatusCode::BAD_REQUEST, "Username is already taken"))
+            } else {
+                Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
             }
             // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen
 
@@ -65,7 +63,24 @@ pub async fn create_new_user(
     }
 
     // set cookies
+    let access_token = match user.generate_access_token(&appstate.jwt_secret) {
+        Some(access_token) => access_token,
+        None => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate access token please log in manually"))
+    };
+    let refresh_token = match user.generate_refresh_token(&appstate.jwt_secret) {
+        Some(r_token) => r_token,
+        None => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate refresh token please log in manually"))
+    };
+    println!("access: {}\nrefresh: {}", &access_token.token, &refresh_token.token);
 
+    let mut r_cookie = Cookie::new("refresh_token", refresh_token.token);
+    let mut a_cookie = Cookie::new("access_token", access_token.token);
+    r_cookie.set_same_site(SameSite::Strict);
+    r_cookie.set_http_only(true);
+    a_cookie.set_same_site(SameSite::Strict);
+    a_cookie.set_http_only(true);
+
+    jar = jar.add(r_cookie).add(a_cookie);
 
     Ok((StatusCode::CREATED, jar))
 }
