@@ -1,11 +1,19 @@
 pub mod handlers  {
     pub mod user {
         pub mod new;
+        pub mod auth_test;
+    }
+}
+
+pub mod middleware {
+    pub mod user {
+        pub mod auth;
     }
 }
 
 pub mod models {
     pub mod user;
+    pub mod auth_user;
     pub mod user_permission;
     pub mod appstate;
 }

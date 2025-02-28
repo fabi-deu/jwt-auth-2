@@ -1,4 +1,4 @@
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use crate::util::jwt::claims::Claims;
 
@@ -22,8 +22,24 @@ impl AccessToken {
             token,
         })
     }
+
+    /// parsed from string
+    pub fn from_literal(token: String, jwt_secret: &String) -> jsonwebtoken::errors::Result<Self> {
+        // decode token
+        let token_data = decode::<Claims>(
+            &token,
+            &DecodingKey::from_secret(jwt_secret.as_bytes()),
+            &Validation::default(),
+        )?;
+        Ok(Self {
+            claims: token_data.claims,
+            token,
+        })
+    }
+
+
     /// this function returns the literal token
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         self.token.clone()
     }
 

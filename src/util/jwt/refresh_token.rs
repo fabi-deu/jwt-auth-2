@@ -22,4 +22,9 @@ impl RefreshToken {
             token,
         })
     }
+    /// this function returns the literal token
+    pub fn to_string(&self) -> String {
+        self.token.clone()
+    }
+
 }
