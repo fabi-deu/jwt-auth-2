@@ -1,6 +1,5 @@
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
-use crate::models::user::User;
 use crate::util::jwt::claims::Claims;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -23,6 +22,11 @@ impl AccessToken {
             token,
         })
     }
+    /// this function returns the literal token
+    fn to_string(&self) -> String {
+        self.token.clone()
+    }
+
 
     pub fn refresh_token() -> () {
         todo!()

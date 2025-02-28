@@ -42,7 +42,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(|| async { "Hello World" }))
-        .route("/new", post(create_new_user)).with_state(appstate);
+        .route("/v1/user/new", post(create_new_user)).with_state(appstate);
 
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", &port)).await.unwrap();

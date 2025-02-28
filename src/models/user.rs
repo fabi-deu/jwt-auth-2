@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
 use std::sync::Arc;
 use jsonwebtoken::{decode, DecodingKey, Validation};
-use tracing_subscriber::fmt::writer::EitherWriter::A;
 use uuid::Uuid;
 use crate::util::jwt::access_token::AccessToken;
 use crate::util::jwt::claims::Claims;
