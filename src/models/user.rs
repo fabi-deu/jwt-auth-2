@@ -101,7 +101,7 @@ impl User {
 
     /// generates refresh token (exp 20 minutes) for user
     pub fn generate_refresh_token(&self, jwt_secret: &String) -> Option<RefreshToken> {
-        let claims = Claims::from_user(&self, 20)
+        let claims = Claims::from_user(&self, 20);
         match RefreshToken::from_claims(claims, jwt_secret) {
             Ok(token) => Some(token),
             _ => None
