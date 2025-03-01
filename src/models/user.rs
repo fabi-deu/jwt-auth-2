@@ -8,9 +8,9 @@ use crate::util::jwt::access_token::AccessToken;
 use crate::util::jwt::claims::Claims;
 use crate::util::jwt::refresh_token::RefreshToken;
 
-#[derive(Clone, Debug, Deserialize, Serialize, FromRow)]
+#[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
 pub struct User {
-    pub(crate) uuid: Uuid,
+    pub(crate) uuid: uuid::fmt::Hyphenated,
     pub(crate) username: String,
     password: String,
     pub(crate) email: String,
@@ -24,7 +24,7 @@ pub struct User {
 impl User {
     pub fn new(username: String, password: String, email: String) -> Self {
         Self {
-            uuid: Uuid::new_v4(),
+            uuid: Uuid::new_v4().hyphenated(),
             username,
             password,
             email,

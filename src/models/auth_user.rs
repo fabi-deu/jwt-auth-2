@@ -4,12 +4,12 @@ use async_trait::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::http::StatusCode;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use crate::models::user::User;
 
 
 /// Wrapper for User to handle middleware
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct AuthUser(pub(crate) User);
 
 impl Deref for AuthUser {
