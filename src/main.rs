@@ -1,14 +1,17 @@
 use std::env;
 use std::sync::Arc;
-use axum::Router;
+use axum::{middleware, Extension, Router};
 use axum::routing::{get, post};
 use axum_extra::extract::cookie::Key;
 use dotenv::dotenv;
 use sqlx::{Pool, Sqlite};
 use sqlx::sqlite::SqlitePoolOptions;
+use tower::ServiceBuilder;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use jwt_auth_lib::handlers::user::auth_test::auth_test;
 use jwt_auth_lib::handlers::user::new::create_new_user;
+use jwt_auth_lib::middleware::user::auth::auth_middleware;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
 
 #[tokio::main]
@@ -40,7 +43,18 @@ async fn main() {
         pool, jwt_secret, Key::try_from(cookie_secret.as_bytes()).unwrap()
     )));
 
+    let protected_routes = Router::new()
+        .route("/auth_test", get(auth_test))
+        .layer(
+            ServiceBuilder::new()
+                .layer(middleware::from_fn(auth_middleware))
+                .layer(Extension(appstate.clone()))
+        );
+
+
     let app = Router::new()
+        .nest("/v1/user/", protected_routes)
+        .layer(Extension(appstate.clone()))
         .route("/", get(|| async { "Hello World" }))
         .route("/v1/user/new", post(create_new_user)).with_state(appstate);
 

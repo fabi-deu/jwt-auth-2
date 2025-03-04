@@ -3,15 +3,14 @@ use crate::models::user_permission::Permission;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
 use std::sync::Arc;
-use jsonwebtoken::{decode, DecodingKey, Validation};
 use uuid::Uuid;
 use crate::util::jwt::access_token::AccessToken;
 use crate::util::jwt::claims::Claims;
 use crate::util::jwt::refresh_token::RefreshToken;
 
-#[derive(Clone, Debug, Deserialize, Serialize, FromRow)]
+#[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
-    pub(crate) uuid: Uuid,
+    pub(crate) uuid: uuid::fmt::Hyphenated,
     pub(crate) username: String,
     password: String,
     pub(crate) email: String,
@@ -25,7 +24,7 @@ pub struct User {
 impl User {
     pub fn new(username: String, password: String, email: String) -> Self {
         Self {
-            uuid: Uuid::new_v4(),
+            uuid: Uuid::new_v4().hyphenated(),
             username,
             password,
             email,
@@ -36,16 +35,9 @@ impl User {
     }
 
     /// gets user by token
-    pub async fn from_token(token: String, jwt_secret: &String, conn: &Arc<Pool<Sqlite>>) -> Result<Option<User>, Box<dyn Error>> {
-        // decode token
-        let token_data = decode::<Claims>(
-            &token,
-            &DecodingKey::from_secret(jwt_secret.as_bytes()),
-            &Validation::default(),
-        )?;
-
+    pub async fn from_access_token(token: AccessToken, conn: &Arc<Pool<Sqlite>>) -> Result<Option<User>, Box<dyn Error>> {
         // validate claims
-        let claims = token_data.claims;
+        let claims = token.claims;
         if !claims.valid_dates() {
             return Ok(None)
         }
@@ -66,7 +58,7 @@ impl User {
     pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE uuid = ?";
         let user = sqlx::query_as::<_, User>(query)
-            .bind(claims.sub)
+            .bind(claims.sub.to_string())
             .fetch_one(conn.as_ref())
             .await?;
         Ok(user)
@@ -89,18 +81,18 @@ impl User {
         Ok(())
     }
 
-    /// generates access token (exp in 1y) for user
+    /// generates access token (exp in 20 minutes) for user
     pub fn generate_access_token(&self, jwt_secret: &String) -> Option<AccessToken> {
-        let claims = Claims::from_user(&self, 60*24*365);
+        let claims = Claims::from_user(&self, 20);
         match AccessToken::from_claims(claims, jwt_secret) {
             Ok(token) => Some(token),
             _ => None,
         }
     }
 
-    /// generates refresh token (exp 20 minutes) for user
+    /// generates refresh token (exp in 1y) for user
     pub fn generate_refresh_token(&self, jwt_secret: &String) -> Option<RefreshToken> {
-        let claims = Claims::from_user(&self, 20);
+        let claims = Claims::from_user(&self, 525600); // 525600 = 60*24*365 = 1year
         match RefreshToken::from_claims(claims, jwt_secret) {
             Ok(token) => Some(token),
             _ => None

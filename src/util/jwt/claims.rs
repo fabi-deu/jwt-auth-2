@@ -29,7 +29,7 @@ impl Claims {
     /// * `exp` - Describes in how many minutes the token will expire
     pub fn from_user(user: &User, exp: u64) -> Self {
         Self {
-            sub: user.uuid,
+            sub: user.uuid.into_uuid(),
             tokenversion: user.tokenversion,
             iat: Utc::now().timestamp() as u64,
             exp: Utc::now().timestamp() as u64 + exp*60,
@@ -37,10 +37,11 @@ impl Claims {
     }
 
     pub fn valid_dates(&self) -> bool {
-        if self.exp < Utc::now().timestamp() as u64 {
+        let now = Utc::now().timestamp() as u64;
+        if self.exp <  now {
             return false
         }
-        if self.iat > Utc::now().timestamp() as u64 {
+        if self.iat > now {
             return false
         }
 
