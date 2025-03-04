@@ -1,9 +1,11 @@
-use axum::Json;
+use axum::{Extension, Json};
 use crate::models::auth_user::AuthUser;
 use crate::models::user::User;
 
+
+#[axum_macros::debug_handler]
 pub async fn auth_test(
-    AuthUser(auth_user): AuthUser,
+    user: Extension<AuthUser>
 ) -> Json<User> {
-    Json(auth_user)
+    Json(user.0.0)
 }

@@ -37,10 +37,11 @@ impl Claims {
     }
 
     pub fn valid_dates(&self) -> bool {
-        if self.exp < Utc::now().timestamp() as u64 {
+        let now = Utc::now().timestamp() as u64;
+        if self.exp <  now {
             return false
         }
-        if self.iat > Utc::now().timestamp() as u64 {
+        if self.iat > now {
             return false
         }
 

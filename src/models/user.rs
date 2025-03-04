@@ -8,7 +8,7 @@ use crate::util::jwt::access_token::AccessToken;
 use crate::util::jwt::claims::Claims;
 use crate::util::jwt::refresh_token::RefreshToken;
 
-#[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
+#[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
     pub(crate) uuid: uuid::fmt::Hyphenated,
     pub(crate) username: String,
@@ -81,18 +81,18 @@ impl User {
         Ok(())
     }
 
-    /// generates access token (exp in 1y) for user
+    /// generates access token (exp in 20 minutes) for user
     pub fn generate_access_token(&self, jwt_secret: &String) -> Option<AccessToken> {
-        let claims = Claims::from_user(&self, 60*24*365);
+        let claims = Claims::from_user(&self, 20);
         match AccessToken::from_claims(claims, jwt_secret) {
             Ok(token) => Some(token),
             _ => None,
         }
     }
 
-    /// generates refresh token (exp 20 minutes) for user
+    /// generates refresh token (exp in 1y) for user
     pub fn generate_refresh_token(&self, jwt_secret: &String) -> Option<RefreshToken> {
-        let claims = Claims::from_user(&self, 20);
+        let claims = Claims::from_user(&self, 525600); // 525600 = 60*24*365 = 1year
         match RefreshToken::from_claims(claims, jwt_secret) {
             Ok(token) => Some(token),
             _ => None
