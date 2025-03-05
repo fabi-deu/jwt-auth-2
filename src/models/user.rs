@@ -3,6 +3,7 @@ use crate::models::user_permission::Permission;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
 use std::sync::Arc;
+use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordVerifier, Version};
 use uuid::Uuid;
 use crate::util::jwt::access_token::AccessToken;
 use crate::util::jwt::claims::Claims;
@@ -107,5 +108,16 @@ impl User {
             Ok(token) => Some(token),
             _ => None
         }
+    }
+
+
+    pub fn verify_password(&self, attempt: String) -> Result<bool, Box<dyn Error>> {
+        let argon2 = Argon2::new(
+            Algorithm::Argon2id,
+            Version::V0x13,
+            Params::default()
+        );
+        let self_parsed = PasswordHash::new(&self.password)?;
+        Ok(argon2.verify_password(attempt.as_bytes(), &self_parsed).is_ok())
     }
 }
