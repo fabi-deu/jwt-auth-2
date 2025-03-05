@@ -57,12 +57,22 @@ impl User {
     /// DOES NOT CHECK FOR VALIDATION
     pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE uuid = ?";
-        let user = sqlx::query_as::<_, User>(query)
+        let user = sqlx::query_as::<_, Self>(query)
             .bind(claims.sub.to_string())
             .fetch_one(conn.as_ref())
             .await?;
         Ok(user)
     }
+
+    pub async fn from_username(username: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, Box<dyn Error>> {
+        let query = r"SELECT * FROM users WHERE username = ?";
+        let user = sqlx::query_as::<_, Self>(query)
+            .bind(username)
+            .fetch_one(conn.as_ref())
+            .await?;
+        Ok(user)
+    }
+
 
     /// writes user to db
     pub async fn write_to_db(&self, conn: &Arc<Pool<Sqlite>>) -> Result<(), sqlx::Error> {
