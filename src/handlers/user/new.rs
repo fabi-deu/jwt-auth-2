@@ -1,12 +1,12 @@
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
-use axum_extra::extract::cookie::{Cookie, SameSite};
 use axum_extra::extract::PrivateCookieJar;
 use serde::{Deserialize, Serialize};
 use sqlx::Error;
 use crate::models::appstate::{AppstateWrapper};
 use crate::models::user::User;
+use crate::util::cookies::generate_cookies;
 use crate::util::hashing::hash_password;
 use crate::util::validation::{valid_password, valid_username};
 
@@ -21,7 +21,7 @@ pub struct Body {
 #[axum_macros::debug_handler]
 pub async fn create_new_user(
     State(appstate_wrapper): State<AppstateWrapper>,
-    mut jar: PrivateCookieJar,
+    jar: PrivateCookieJar,
     Json(body): Json<Body>
 ) -> Result<(StatusCode, PrivateCookieJar), (StatusCode, &'static str)> {
     let appstate = appstate_wrapper.0;
@@ -64,24 +64,7 @@ pub async fn create_new_user(
     }
 
     // set cookies
-    let access_token = match user.generate_access_token(&appstate.jwt_secret) {
-        Some(access_token) => access_token,
-        None => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate access token please log in manually"))
-    };
-    let refresh_token = match user.generate_refresh_token(&appstate.jwt_secret) {
-        Some(r_token) => r_token,
-        None => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate refresh token please log in manually"))
-    };
-    println!("access: {}\nrefresh: {}", &access_token.token, &refresh_token.token);
-
-    let mut r_cookie = Cookie::new("refresh_token", refresh_token.token);
-    let mut a_cookie = Cookie::new("access_token", access_token.token);
-    r_cookie.set_same_site(SameSite::Strict);
-    r_cookie.set_http_only(true);
-    a_cookie.set_same_site(SameSite::Strict);
-    a_cookie.set_http_only(true);
-
-    jar = jar.add(r_cookie).add(a_cookie);
+    let jar = generate_cookies(&user, jar, &appstate)?;
 
     Ok((StatusCode::CREATED, jar))
 }

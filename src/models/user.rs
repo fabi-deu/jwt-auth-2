@@ -1,13 +1,13 @@
-use std::error::Error;
 use crate::models::user_permission::Permission;
-use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Pool, Sqlite};
-use std::sync::Arc;
-use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordVerifier, Version};
-use uuid::Uuid;
 use crate::util::jwt::access_token::AccessToken;
 use crate::util::jwt::claims::Claims;
 use crate::util::jwt::refresh_token::RefreshToken;
+use argon2::{password_hash, Algorithm, Argon2, Params, PasswordHash, PasswordVerifier, Version};
+use serde::Serialize;
+use sqlx::{FromRow, Pool, Sqlite};
+use std::error::Error;
+use std::sync::Arc;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
@@ -111,7 +111,7 @@ impl User {
     }
 
 
-    pub fn verify_password(&self, attempt: String) -> Result<bool, Box<dyn Error>> {
+    pub fn verify_password(&self, attempt: String) -> password_hash::errors::Result<bool> {
         let argon2 = Argon2::new(
             Algorithm::Argon2id,
             Version::V0x13,
