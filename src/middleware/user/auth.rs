@@ -32,7 +32,7 @@ pub async fn auth_middleware(
 
     // check for expired token
     // TODO ! automatically generate new token based on refresh token
-    let claims = &token.claims;
+    let claims = &token.claims.clone();
     if !claims.valid_dates() {
         return Err(StatusCode::UNAUTHORIZED)
     }
@@ -52,6 +52,12 @@ pub async fn auth_middleware(
             return Err(StatusCode::BAD_REQUEST)
         }
     };
+
+    // make sure the token-versions are the same
+    if &user.tokenversion != &claims.tokenversion {
+        return Err(StatusCode::UNAUTHORIZED)
+    }
+
 
     // pass wrapped user to next
     req.extensions_mut().insert(AuthUser(user));

@@ -57,8 +57,6 @@ pub async fn create_new_user(
                 println!("{}", db_err.message());
                 Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
             }
-            // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen
-
         }
         _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
     }
