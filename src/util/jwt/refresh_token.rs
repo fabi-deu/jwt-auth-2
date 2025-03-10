@@ -1,6 +1,7 @@
 use crate::util::jwt::claims::Claims;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
+use crate::util::jwt::access_token::AccessToken;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RefreshToken {
@@ -27,4 +28,10 @@ impl RefreshToken {
         self.token.clone()
     }
 
+    /// generates new token from old
+    pub fn refresh_token(self, jwt_secret: &String) -> jsonwebtoken::errors::Result<Self> {
+        let old_claims = &self.claims;
+        let new_claims = Claims::new(old_claims.sub, old_claims.tokenversion, 20);
+        RefreshToken::from_claims(new_claims, jwt_secret)
+    }
 }

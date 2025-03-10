@@ -43,7 +43,7 @@ impl AccessToken {
         self.token.clone()
     }
 
-
+    /// generates new token from old
     pub fn refresh_token(self, jwt_secret: &String) -> jsonwebtoken::errors::Result<Self> {
         let old_claims = &self.claims;
         let new_claims = Claims::new(old_claims.sub, old_claims.tokenversion, 20);
