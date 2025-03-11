@@ -1,8 +1,10 @@
 pub mod handlers  {
     pub mod user {
         pub mod refresh {
-            pub mod access;
-            pub mod refresh;
+            pub mod new_refresh;
+            pub mod new_access;
+            pub mod refresh_access;
+            pub mod refresh_refresh;
         }
         pub mod new;
         pub mod login;

@@ -12,8 +12,8 @@ use tracing_subscriber::FmtSubscriber;
 use jwt_auth_lib::handlers::user::auth_test::auth_test;
 use jwt_auth_lib::handlers::user::login::login;
 use jwt_auth_lib::handlers::user::new::create_new_user;
-use jwt_auth_lib::handlers::user::refresh::access::regenerate_access_token;
-use jwt_auth_lib::handlers::user::refresh::refresh::regenerate_refresh_token;
+use jwt_auth_lib::handlers::user::refresh::refresh_access::regenerate_access_token;
+use jwt_auth_lib::handlers::user::refresh::refresh_refresh::regenerate_refresh_token;
 use jwt_auth_lib::middleware::user::auth::auth_middleware;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
 
@@ -70,7 +70,8 @@ async fn main() {
     let app = Router::new()
         .nest("/v1/user/", protected_routes)
         .layer(Extension(appstate.clone()))
-        .nest("/v1/user/", pub_routes);
+        .nest("/v1/user/", pub_routes)
+        .with_state(appstate);
 
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", &port)).await.unwrap();
