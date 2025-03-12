@@ -8,6 +8,7 @@ use crate::models::appstate::AppstateWrapper;
 use crate::models::auth_user::AuthUser;
 use crate::models::user::User;
 use crate::util::jwt::access_token::AccessToken;
+use crate::util::jwt::general::Token;
 
 pub async fn auth_middleware(
     Extension(appstate_wrapper): Extension<AppstateWrapper>,

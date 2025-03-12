@@ -12,8 +12,6 @@ use tracing_subscriber::FmtSubscriber;
 use jwt_auth_lib::handlers::user::auth_test::auth_test;
 use jwt_auth_lib::handlers::user::login::login;
 use jwt_auth_lib::handlers::user::new::create_new_user;
-use jwt_auth_lib::handlers::user::refresh::refresh_access::regenerate_access_token;
-use jwt_auth_lib::handlers::user::refresh::refresh_refresh::regenerate_refresh_token;
 use jwt_auth_lib::middleware::user::auth::auth_middleware;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
 
@@ -57,8 +55,6 @@ async fn main() {
 
     let protected_routes = Router::new()
         .route("/auth_test", get(auth_test))
-        .route("/refresh/refresh_token", get(regenerate_refresh_token))
-        .route("/refresh/access_token", get(regenerate_access_token))
         .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn(auth_middleware))

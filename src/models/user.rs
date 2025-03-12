@@ -4,10 +4,11 @@ use crate::util::jwt::claims::Claims;
 use crate::util::jwt::refresh_token::RefreshToken;
 use argon2::{password_hash, Algorithm, Argon2, Params, PasswordHash, PasswordVerifier, Version};
 use serde::Serialize;
-use sqlx::{Executor, FromRow, Pool, Sqlite};
+use sqlx::{FromRow, Pool, Sqlite};
 use std::error::Error;
 use std::sync::Arc;
 use uuid::Uuid;
+use crate::util::jwt::general::Token;
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
@@ -74,7 +75,7 @@ impl User {
         Ok(user)
     }
 
-    pub async fn from_uuid(uuid: Uuid, conn: impl Executor) -> Result<User, Box<dyn Error>> {
+    pub async fn from_uuid(uuid: Uuid, conn: &Arc<Pool<Sqlite>>) -> Result<User, Box<dyn Error>> {
         let query = r"SELECT * FROM users WHERE username = ?";
         let user = sqlx::query_as::<_, Self>(query)
             .bind(uuid.hyphenated().to_string())

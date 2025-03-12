@@ -1,11 +1,5 @@
 pub mod handlers  {
     pub mod user {
-        pub mod refresh {
-            pub mod new_refresh;
-            pub mod new_access;
-            pub mod refresh_access;
-            pub mod refresh_refresh;
-        }
         pub mod new;
         pub mod login;
         pub mod auth_test;
@@ -28,6 +22,7 @@ pub mod models {
 pub(crate) mod util {
     pub(crate) mod cookies;
     pub(crate) mod jwt {
+        pub(crate) mod general;
         pub(crate) mod access_token;
         pub(crate) mod refresh_token;
         pub(crate) mod claims;
