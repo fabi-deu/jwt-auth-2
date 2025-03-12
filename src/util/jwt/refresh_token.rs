@@ -41,7 +41,7 @@ impl Token for RefreshToken {
     fn decode_literal(&self, jwt_secret: &String) -> jsonwebtoken::errors::Result<Claims> {
         Ok(
             decode::<Claims>(
-                &self.token,
+                &self.to_string(),
                 &DecodingKey::from_secret(jwt_secret.as_bytes()),
                 &Validation::default(),
             )?.claims
@@ -71,7 +71,7 @@ impl RefreshToken {
     }
     /// generates cookie and adds it to jar
     pub fn generate_cookie(&self, jar: PrivateCookieJar) -> PrivateCookieJar {
-        let token = self.token.clone();
+        let token = self.to_string();
         let mut cookie = Cookie::new("refresh_token", token);
         cookie.set_http_only(true);
         cookie.set_same_site(SameSite::Strict);

@@ -12,7 +12,10 @@ use tracing_subscriber::FmtSubscriber;
 use jwt_auth_lib::handlers::user::auth_test::auth_test;
 use jwt_auth_lib::handlers::user::login::login;
 use jwt_auth_lib::handlers::user::new::create_new_user;
+use jwt_auth_lib::handlers::user::refresh::access_token::refresh_access_token;
+use jwt_auth_lib::handlers::user::refresh::refresh_token::refresh_refresh_token;
 use jwt_auth_lib::middleware::user::auth::auth_middleware;
+use jwt_auth_lib::middleware::user::refresh_auth::refresh_token_auth_middleware;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
 
 #[tokio::main]
@@ -50,6 +53,7 @@ async fn main() {
     let pub_routes = Router::new()
         .route("/new", post(create_new_user))
         .route("/login", post(login))
+        .route("/refresh/refresh_token", post(refresh_refresh_token))
         .with_state(appstate.clone());
 
 
@@ -61,10 +65,18 @@ async fn main() {
                 .layer(Extension(appstate.clone()))
         );
 
+    let refresh_token_protected_routes = Router::new()
+        .route("/refresh/access_token", get(refresh_access_token))
+        .layer(
+            ServiceBuilder::new()
+                .layer(middleware::from_fn(refresh_token_auth_middleware))
+                .layer(Extension(appstate.clone()))
+        );
 
 
     let app = Router::new()
         .nest("/v1/user/", protected_routes)
+        .nest("/v1/user", refresh_token_protected_routes)
         .layer(Extension(appstate.clone()))
         .nest("/v1/user/", pub_routes)
         .with_state(appstate);

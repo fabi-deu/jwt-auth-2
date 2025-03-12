@@ -1,17 +1,17 @@
 use crate::models::appstate::AppstateWrapper;
 use crate::models::auth_user::AuthUser;
 use crate::models::user::User;
-use crate::util::jwt::access_token::AccessToken;
 use axum::extract::Request;
 use axum::http::StatusCode;
 use axum::middleware::Next;
 use axum::response::Response;
 use axum::Extension;
 use axum_extra::extract::PrivateCookieJar;
+use crate::util::jwt::refresh_token::RefreshToken;
 
 #[axum_macros::debug_middleware]
-/// middleware for authenticating users based on cookie jar
-pub async fn auth_middleware(
+/// middleware for authenticating users based on cookie jar (refresh_token)
+pub async fn refresh_token_auth_middleware(
     Extension(appstate_wrapper): Extension<AppstateWrapper>,
     mut req: Request,
     next: Next
@@ -21,13 +21,14 @@ pub async fn auth_middleware(
 
     // get cookies
     let jar = PrivateCookieJar::from_headers(headers, appstate.cookie_secret.clone());
-    let token = match AccessToken::from_jar(jar, &appstate.jwt_secret) {
+    println!("{:#?}", jar);
+    println!("{:#?}", jar.get("refresh_token"));
+    let token = match RefreshToken::from_jar(jar, &appstate.jwt_secret) {
         None => return Err(StatusCode::UNAUTHORIZED),
         Some(token) => token,
     };
-
+    println!("a");
     // check for expired token
-    // TODO ! automatically generate new token if expired
     let claims = &token.claims.clone();
     if !claims.valid_dates() {
         return Err(StatusCode::UNAUTHORIZED)
@@ -35,18 +36,15 @@ pub async fn auth_middleware(
 
 
     // get user from access token
-    let user = match User::from_access_token(token, &appstate.db).await {
-        Ok(some_user) => {
-            match some_user {
-                Some(user) => user,
-                _ => return Err(StatusCode::UNAUTHORIZED)
+    let user = match User::from_uuid(claims.sub, &appstate.db).await {
+        Ok(user) => user,
+        Err(sqlx::Error::Database(err)) => {
+            if err.message().contains("uuid") {
+                return Err(StatusCode::BAD_REQUEST)
             }
+            return Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
-        Err(e) => {
-            println!("{}", e.to_string());
-
-            return Err(StatusCode::BAD_REQUEST)
-        }
+        _ => return Err(StatusCode::INTERNAL_SERVER_ERROR)
     };
 
     // make sure the token-versions are the same

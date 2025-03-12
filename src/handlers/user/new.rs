@@ -45,6 +45,7 @@ pub async fn create_new_user(
     let user = User::new(body.username, hashed_password, body.email);
 
     // add user to db
+    // *I don't like this handling*
     let query = user.write_to_db(&appstate.db);
     match query.await {
         Ok(_) => {},
