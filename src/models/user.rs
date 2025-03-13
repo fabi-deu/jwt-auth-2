@@ -7,7 +7,9 @@ use serde::Serialize;
 use sqlx::{FromRow, Pool, Sqlite};
 use std::error::Error;
 use std::sync::Arc;
+use axum::http::StatusCode;
 use uuid::Uuid;
+use crate::util::jwt::general::Token;
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
@@ -42,30 +44,23 @@ impl User {
         if !claims.valid_dates() {
             return Ok(None)
         }
-
         // get user
         let user = User::from_claims(claims.clone(), conn).await?;
-
         // check for tokenversion
         if &claims.tokenversion != &user.tokenversion {
             return Ok(None)
         }
-
         Ok(Some(user))
     }
 
     /// gets user from db with uuid form claims
     /// DOES NOT CHECK FOR VALIDATION
     pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
-        let query = r"SELECT * FROM users WHERE uuid = ?";
-        let user = sqlx::query_as::<_, Self>(query)
-            .bind(claims.sub.to_string())
-            .fetch_one(conn.as_ref())
-            .await?;
-        Ok(user)
+        let uuid = claims.sub;
+        User::from_uuid(uuid, conn).await
     }
 
-    pub async fn from_username(username: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, Box<dyn Error>> {
+    pub async fn from_username(username: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE username = ?";
         let user = sqlx::query_as::<_, Self>(query)
             .bind(username)
@@ -74,6 +69,14 @@ impl User {
         Ok(user)
     }
 
+    pub async fn from_uuid(uuid: Uuid, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
+        let query = r"SELECT * FROM users WHERE uuid = ?";
+        let user = sqlx::query_as::<_, Self>(query)
+            .bind(uuid.hyphenated().to_string())
+            .fetch_one(conn.as_ref())
+            .await?;
+        Ok(user)
+    }
 
     /// writes user to db
     pub async fn write_to_db(&self, conn: &Arc<Pool<Sqlite>>) -> Result<(), sqlx::Error> {
@@ -111,6 +114,7 @@ impl User {
     }
 
 
+    /// verifies passwords
     pub fn verify_password(&self, attempt: String) -> password_hash::errors::Result<bool> {
         let argon2 = Argon2::new(
             Algorithm::Argon2id,
@@ -119,5 +123,23 @@ impl User {
         );
         let self_parsed = PasswordHash::new(&self.password)?;
         Ok(argon2.verify_password(attempt.as_bytes(), &self_parsed).is_ok())
+    }
+
+    /// log in functionality by using password and username
+    pub async fn login(username: String, password: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, (StatusCode, &'static str)> {
+        // fetch user from db
+        let user: User = match User::from_username(username, conn).await {
+            Ok(user) => user,
+            // technically this could also be a db error, but realistically it's the users false input
+            Err(_) => return Err((StatusCode::BAD_REQUEST, "Failed to fetch user from db"))
+        };
+
+
+        // compare passwords and return
+        match user.verify_password(password) {
+            Ok(true) => Ok(user),
+            Ok(false) => Err((StatusCode::BAD_REQUEST, "Wrong password")),
+            Err(_) => Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify password")),
+        }
     }
 }

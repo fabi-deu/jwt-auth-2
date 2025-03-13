@@ -45,6 +45,7 @@ pub async fn create_new_user(
     let user = User::new(body.username, hashed_password, body.email);
 
     // add user to db
+    // *I don't like this handling*
     let query = user.write_to_db(&appstate.db);
     match query.await {
         Ok(_) => {},
@@ -54,11 +55,8 @@ pub async fn create_new_user(
             } else if db_err.message().contains("username") {
                 Err((StatusCode::BAD_REQUEST, "Username is already taken"))
             } else {
-                println!("{}", db_err.message());
                 Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
             }
-            // technically the uuid could be the same here, and we would have an unhandled exception but when will that happen
-
         }
         _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
     }
