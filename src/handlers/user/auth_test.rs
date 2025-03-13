@@ -12,7 +12,5 @@ pub async fn auth_test(
     jar: PrivateCookieJar,
     user: Extension<AuthUser>,
 ) -> Json<User> {
-    let appstate = wrapped_appstate.0;
-    println!("{:#?}", jar);
     Json(user.0.0)
 }

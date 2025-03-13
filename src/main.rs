@@ -82,7 +82,6 @@ async fn main() {
         .nest("/v1/user", refresh_token_protected_routes)
         .layer(Extension(appstate.clone()))
         .nest("/v1/user/", pub_routes)
-        .route("/cookie_test", get(test))
         .with_state(appstate);
 
 
@@ -91,20 +90,4 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-
-async fn test(
-    State(wrapped_appstate): State<AppstateWrapper>,
-    jar: PrivateCookieJar,
-) -> StatusCode {
-    let appstate = wrapped_appstate.0;
-
-    println!("{:#?}", jar);
-
-    let a = jar.get("access_token").unwrap();
-    let r = jar.get("refresh_token").unwrap();
-
-    println!("decrypted: {}, {}", a.value(), r.value());
-
-    StatusCode::OK
-}
 

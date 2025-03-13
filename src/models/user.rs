@@ -57,7 +57,6 @@ impl User {
     /// DOES NOT CHECK FOR VALIDATION
     pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
         let uuid = claims.sub;
-        println!("uuid: {}", &uuid);
         User::from_uuid(uuid, conn).await
     }
 

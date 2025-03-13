@@ -42,11 +42,7 @@ pub async fn auth_middleware(
                 _ => return Err(StatusCode::UNAUTHORIZED)
             }
         }
-        Err(e) => {
-            println!("{}", e.to_string(),);
-
-            return Err(StatusCode::BAD_REQUEST)
-        }
+        Err(_) => return Err(StatusCode::BAD_REQUEST)
     };
 
     // make sure the token-versions are the same

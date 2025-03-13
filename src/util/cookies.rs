@@ -15,8 +15,6 @@ pub fn generate_cookies(user: &User, jar: PrivateCookieJar, appstate: &Appstate)
         None => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate refresh token please log in manually"))
     };
 
-    println!("refresh: {}, access: {}", &refresh_token.to_string(), &access_token.to_string());
-
     let jar = access_token.generate_cookie(jar);
     let jar = refresh_token.generate_cookie(jar);
 

@@ -55,7 +55,6 @@ pub async fn create_new_user(
             } else if db_err.message().contains("username") {
                 Err((StatusCode::BAD_REQUEST, "Username is already taken"))
             } else {
-                println!("{}", db_err.message());
                 Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to write to db"))
             }
         }

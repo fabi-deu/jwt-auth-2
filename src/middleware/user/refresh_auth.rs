@@ -21,13 +21,11 @@ pub async fn refresh_token_auth_middleware(
 
     // get cookies
     let jar = PrivateCookieJar::from_headers(headers, appstate.cookie_secret.clone());
-    println!("{:#?}", jar);
-    println!("{:#?}", jar.get("refresh_token"));
     let token = match RefreshToken::from_jar(jar, &appstate.jwt_secret) {
         None => return Err(StatusCode::UNAUTHORIZED),
         Some(token) => token,
     };
-    println!("a");
+
     // check for expired token
     let claims = &token.claims.clone();
     if !claims.valid_dates() {
