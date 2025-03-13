@@ -1,8 +1,11 @@
 use std::env;
 use std::sync::Arc;
 use axum::{middleware, Extension, Router};
+use axum::extract::State;
+use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum_extra::extract::cookie::Key;
+use axum_extra::extract::PrivateCookieJar;
 use dotenv::dotenv;
 use sqlx::{Pool, Sqlite};
 use sqlx::sqlite::SqlitePoolOptions;
@@ -79,11 +82,29 @@ async fn main() {
         .nest("/v1/user", refresh_token_protected_routes)
         .layer(Extension(appstate.clone()))
         .nest("/v1/user/", pub_routes)
+        .route("/cookie_test", get(test))
         .with_state(appstate);
 
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", &port)).await.unwrap();
     info!("Serving on port {}", port);
     axum::serve(listener, app).await.unwrap();
+}
+
+
+async fn test(
+    State(wrapped_appstate): State<AppstateWrapper>,
+    jar: PrivateCookieJar,
+) -> StatusCode {
+    let appstate = wrapped_appstate.0;
+
+    println!("{:#?}", jar);
+
+    let a = jar.get("access_token").unwrap();
+    let r = jar.get("refresh_token").unwrap();
+
+    println!("decrypted: {}, {}", a.value(), r.value());
+
+    StatusCode::OK
 }
 

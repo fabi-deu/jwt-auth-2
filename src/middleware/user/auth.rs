@@ -43,7 +43,7 @@ pub async fn auth_middleware(
             }
         }
         Err(e) => {
-            println!("{}", e.to_string());
+            println!("{}", e.to_string(),);
 
             return Err(StatusCode::BAD_REQUEST)
         }

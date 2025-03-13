@@ -2,7 +2,7 @@ use crate::models::appstate::Appstate;
 use crate::models::user::User;
 use axum::http::StatusCode;
 use axum_extra::extract::PrivateCookieJar;
-
+use crate::util::jwt::general::Token;
 
 /// generates both access and refresh token for user and adds it to the cookie jar, which is returned
 pub fn generate_cookies(user: &User, jar: PrivateCookieJar, appstate: &Appstate) -> Result<PrivateCookieJar, (StatusCode, &'static str)> {
@@ -14,6 +14,8 @@ pub fn generate_cookies(user: &User, jar: PrivateCookieJar, appstate: &Appstate)
         Some(r_token) => r_token,
         None => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to generate refresh token please log in manually"))
     };
+
+    println!("refresh: {}, access: {}", &refresh_token.to_string(), &access_token.to_string());
 
     let jar = access_token.generate_cookie(jar);
     let jar = refresh_token.generate_cookie(jar);
