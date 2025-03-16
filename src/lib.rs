@@ -4,6 +4,7 @@ pub mod handlers  {
             pub mod access_token;
             pub mod refresh_token;
         }
+        pub mod delete;
         pub mod new;
         pub mod login;
         pub mod auth_test;

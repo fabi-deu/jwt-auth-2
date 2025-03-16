@@ -95,6 +95,17 @@ impl User {
         Ok(())
     }
 
+    /// deletes from db
+    pub async fn delete_from_db(&self, conn: &Arc<Pool<Sqlite>>) -> Result<(), sqlx::Error> {
+        let query = "DELETE FROM users WHERE uuid = ?";
+        let _ = sqlx::query(query)
+            .bind(&self.uuid)
+            .execute(conn.as_ref())
+            .await?;
+
+        Ok(())
+    }
+
     /// generates access token (exp in 20 minutes) for user
     pub fn generate_access_token(&self, jwt_secret: &String) -> Option<AccessToken> {
         let claims = Claims::from_user(&self, 20);
@@ -131,7 +142,7 @@ impl User {
         let user: User = match User::from_username(username, conn).await {
             Ok(user) => user,
             // technically this could also be a db error, but realistically it's the users false input
-            Err(_) => return Err((StatusCode::BAD_REQUEST, "Failed to fetch user from db"))
+            Err(_) => return Err((StatusCode::BAD_REQUEST, "Failed to fetch user from db (most likely bad username)"))
         };
 
 
