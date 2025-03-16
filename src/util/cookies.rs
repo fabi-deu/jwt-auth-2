@@ -2,7 +2,6 @@ use crate::models::appstate::Appstate;
 use crate::models::user::User;
 use axum::http::StatusCode;
 use axum_extra::extract::PrivateCookieJar;
-use crate::util::jwt::general::Token;
 
 /// generates both access and refresh token for user and adds it to the cookie jar, which is returned
 pub fn generate_cookies(user: &User, jar: PrivateCookieJar, appstate: &Appstate) -> Result<PrivateCookieJar, (StatusCode, &'static str)> {
