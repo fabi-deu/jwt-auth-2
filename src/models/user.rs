@@ -204,11 +204,22 @@ impl User {
         // update
         let query = r"UPDATE users SET username = ? WHERE uuid = ?";
         let _ = sqlx::query(query)
-            .bind(username)
+            .bind(&username)
             .bind(&self.uuid)
             .execute(conn.as_ref()).await?;
 
         let new_user = Self::from_username(username, conn).await?;
         Ok(new_user)
+    }
+
+    // updates tokenversion in db
+    pub async fn update_tokenversion(&self, conn: &Arc<Pool<Sqlite>>) -> Result<Self, Box<dyn Error>> {
+        let query = r"UPDATE users SET tokenversion = ? WHERE uuid = ?";
+        let _ = sqlx::query(query)
+            .bind(self.tokenversion as u32)
+            .bind(&self.uuid)
+            .execute(conn.as_ref()).await?;
+
+        Ok(Self { tokenversion: self.tokenversion + 1, ..self.clone() })
     }
 }
