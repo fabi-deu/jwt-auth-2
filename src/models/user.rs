@@ -11,6 +11,7 @@ use axum::http::StatusCode;
 use uuid::Uuid;
 use crate::util::hashing::hash_password;
 use crate::util::jwt::general::Token;
+use crate::util::validation::valid_username;
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
@@ -39,14 +40,14 @@ impl User {
     }
 
     /// gets user by token
-    pub async fn from_access_token(token: AccessToken, conn: &Arc<Pool<Sqlite>>) -> Result<Option<User>, Box<dyn Error>> {
+    pub async fn from_access_token(token: AccessToken, conn: &Arc<Pool<Sqlite>>) -> Result<Option<Self>, Box<dyn Error>> {
         // validate claims
         let claims = token.claims;
         if !claims.valid_dates() {
             return Ok(None)
         }
         // get user
-        let user = User::from_claims(claims.clone(), conn).await?;
+        let user = Self::from_claims(claims.clone(), conn).await?;
         // check for tokenversion
         if &claims.tokenversion != &user.tokenversion {
             return Ok(None)
@@ -56,12 +57,12 @@ impl User {
 
     /// gets user from db with uuid form claims
     /// DOES NOT CHECK FOR VALIDATION
-    pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
+    pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<Self, sqlx::Error> {
         let uuid = claims.sub;
-        User::from_uuid(uuid, conn).await
+        Self::from_uuid(uuid, conn).await
     }
 
-    pub async fn from_username(username: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
+    pub async fn from_username(username: String, conn: &Arc<Pool<Sqlite>>) -> Result<Self, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE username = ?";
         let user = sqlx::query_as::<_, Self>(query)
             .bind(username)
@@ -70,7 +71,7 @@ impl User {
         Ok(user)
     }
 
-    pub async fn from_uuid(uuid: Uuid, conn: &Arc<Pool<Sqlite>>) -> Result<User, sqlx::Error> {
+    pub async fn from_uuid(uuid: Uuid, conn: &Arc<Pool<Sqlite>>) -> Result<Self, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE uuid = ?";
         let user = sqlx::query_as::<_, Self>(query)
             .bind(uuid.hyphenated().to_string())
@@ -138,9 +139,9 @@ impl User {
     }
 
     /// log in functionality by using password and username
-    pub async fn login(username: String, password: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, (StatusCode, &'static str)> {
+    pub async fn login(username: String, password: String, conn: &Arc<Pool<Sqlite>>) -> Result<Self, (StatusCode, &'static str)> {
         // fetch user from db
-        let user: User = match User::from_username(username, conn).await {
+        let user: Self = match Self::from_username(username, conn).await {
             Ok(user) => user,
             // technically this could also be a db error, but realistically it's the users false input
             Err(_) => return Err((StatusCode::BAD_REQUEST, "Failed to fetch user from db (most likely bad username)"))
@@ -156,21 +157,58 @@ impl User {
     }
 
     /// updates field in db
-    pub async fn update_password(&self, new_password_string: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, Box<dyn Error>> {
+    pub async fn update_password(&self, new_password_string: String, conn: &Arc<Pool<Sqlite>>) -> Result<Self, Box<dyn Error>> {
+        // validate password
+        if !valid_username(&new_password_string) {
+            return Err(
+                Box::new(
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other, "Username is not valid"
+                    )
+                )
+            )
+        }
+        // hash password
         let hashed_password = match hash_password(&new_password_string).await {
             Ok(x) => x,
             Err(_) => return Err(
                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Failed to hash password")))
         };
 
+        // update
         let query = r"UPDATE users SET password = ? WHERE uuid = ?";
         let _ = sqlx::query(query)
             .bind(hashed_password.to_string())
-            .bind(&self.uuid.to_string())
+            .bind(&self.uuid)
             .execute(conn.as_ref()).await?;
 
-        let new_user = User::from_uuid(self.uuid.into_uuid(), conn).await?;
+        // get user again for returning
+        let new_user = Self::from_uuid(self.uuid.into_uuid(), conn).await?;
 
+        Ok(new_user)
+    }
+
+    /// update username in db
+    pub async fn update_username(&self, username: String, conn: &Arc<Pool<Sqlite>>) -> Result<Self, Box<dyn Error>> {
+        // validate username
+        if !valid_username(&username) {
+            return Err(
+                Box::new(
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other, "Username is not valid"
+                    )
+                )
+            )
+        }
+
+        // update
+        let query = r"UPDATE users SET username = ? WHERE uuid = ?";
+        let _ = sqlx::query(query)
+            .bind(username)
+            .bind(&self.uuid)
+            .execute(conn.as_ref()).await?;
+
+        let new_user = Self::from_username(username, conn).await?;
         Ok(new_user)
     }
 }
