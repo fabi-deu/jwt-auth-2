@@ -182,8 +182,11 @@ impl User {
             .bind(&self.uuid)
             .execute(conn.as_ref()).await?;
 
-        // get user again for returning
+        // get new user model
         let new_user = Self::from_uuid(self.uuid.into_uuid(), conn).await?;
+
+        // update tokenversion
+        let new_user = new_user.update_tokenversion(conn).await?;
 
         Ok(new_user)
     }
