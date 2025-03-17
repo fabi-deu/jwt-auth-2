@@ -9,6 +9,7 @@ use std::error::Error;
 use std::sync::Arc;
 use axum::http::StatusCode;
 use uuid::Uuid;
+use crate::util::hashing::hash_password;
 use crate::util::jwt::general::Token;
 
 #[derive(Clone, Debug, Serialize, FromRow)]
@@ -152,5 +153,24 @@ impl User {
             Ok(false) => Err((StatusCode::BAD_REQUEST, "Wrong password")),
             Err(_) => Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify password")),
         }
+    }
+
+    /// updates field in db
+    pub async fn update_password(&self, new_password_string: String, conn: &Arc<Pool<Sqlite>>) -> Result<User, Box<dyn Error>> {
+        let hashed_password = match hash_password(&new_password_string).await {
+            Ok(x) => x,
+            Err(_) => return Err(
+                Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Failed to hash password")))
+        };
+
+        let query = r"UPDATE users SET password = ? WHERE uuid = ?";
+        let _ = sqlx::query(query)
+            .bind(hashed_password.to_string())
+            .bind(&self.uuid.to_string())
+            .execute(conn.as_ref()).await?;
+
+        let new_user = User::from_uuid(self.uuid.into_uuid(), conn).await?;
+
+        Ok(new_user)
     }
 }
