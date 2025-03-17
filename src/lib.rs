@@ -1,5 +1,9 @@
 pub mod handlers  {
     pub mod user {
+        pub mod change_credentials {
+            pub mod change_password;
+            pub mod change_username;
+        }
         pub mod refresh {
             pub mod access_token;
             pub mod refresh_token;
