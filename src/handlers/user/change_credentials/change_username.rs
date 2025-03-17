@@ -9,41 +9,31 @@ use crate::models::auth_user::AuthUser;
 
 #[derive(Serialize, Deserialize)]
 pub struct Body {
-    old_password: String,
-    new_password: String,
+    username: String,
 }
 
 
 #[axum_macros::debug_handler]
-pub async fn change_password(
+pub async fn change_username(
     State(appstate_wrapper): State<AppstateWrapper>,
     auth_user: Extension<AuthUser>,
     Json(body): Json<Body>
 ) -> Result<StatusCode, (StatusCode, &'static str)> {
     let appstate = appstate_wrapper.0;
     let user = auth_user.0.0;
-    let (old_password, new_password) = (body.old_password, body.new_password);
+    let username = body.username;
 
-    // verify old password
-    match user.verify_password(old_password) {
-        Ok(true) => {},
-        Ok(false) => return Err((StatusCode::UNAUTHORIZED, "Wrong password")),
-        _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify old password")),
+    if user.username == username {
+        return Err((StatusCode::BAD_REQUEST, "new username cannot be the same as old"))
     }
 
-    // check if new password is the same
-    match user.verify_password(new_password.clone()) {
-        Ok(true) => return Err((StatusCode::BAD_REQUEST, "new password cannot be the same as old")),
-        _ => {}, // just continue
-    }
 
-    // update password
-    match user.update_password(new_password, &appstate.db).await {
+    // update
+    match user.update_username(username, &appstate.db).await {
         Ok(_) => {},
         Err(e) => {
             // downcast error
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
-                println!("E: {:?}", io_err.to_string());
                 return match io_err.kind() {
                     ErrorKind::Other => Err((StatusCode::BAD_REQUEST, "Bad password")),
                     _ => Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update password"))
@@ -51,8 +41,9 @@ pub async fn change_password(
             }
             return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update password"))
         }
-    };
+    }
 
+    // we don't have to generate new tokens as the old ones are still perfectly valid (uuid-based)
 
     Ok(StatusCode::OK)
 }

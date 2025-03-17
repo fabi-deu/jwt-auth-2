@@ -11,7 +11,7 @@ use axum::http::StatusCode;
 use uuid::Uuid;
 use crate::util::hashing::hash_password;
 use crate::util::jwt::general::Token;
-use crate::util::validation::valid_username;
+use crate::util::validation::{valid_password, valid_username};
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct User {
@@ -159,11 +159,11 @@ impl User {
     /// updates field in db
     pub async fn update_password(&self, new_password_string: String, conn: &Arc<Pool<Sqlite>>) -> Result<Self, Box<dyn Error>> {
         // validate password
-        if !valid_username(&new_password_string) {
+        if !valid_password(&new_password_string) {
             return Err(
                 Box::new(
                     std::io::Error::new(
-                        std::io::ErrorKind::Other, "Username is not valid"
+                        std::io::ErrorKind::Other, "password is not valid"
                     )
                 )
             )

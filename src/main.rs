@@ -11,6 +11,7 @@ use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use jwt_auth_lib::handlers::user::auth_test::auth_test;
 use jwt_auth_lib::handlers::user::change_credentials::change_password::change_password;
+use jwt_auth_lib::handlers::user::change_credentials::change_username::change_username;
 use jwt_auth_lib::handlers::user::delete::delete_user;
 use jwt_auth_lib::handlers::user::login::login;
 use jwt_auth_lib::handlers::user::new::create_new_user;
@@ -63,6 +64,7 @@ async fn main() {
         .route("/auth_test", get(auth_test))
         .route("/delete", delete(delete_user))
         .route("/change/password", put(change_password))
+        .route("/change/username", put(change_username))
         .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn(auth_middleware))
