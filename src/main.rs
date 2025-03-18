@@ -1,25 +1,13 @@
 use std::env;
 use std::sync::Arc;
-use axum::{middleware, Extension, Router};
-use axum::routing::{delete, get, post, put};
 use axum_extra::extract::cookie::Key;
 use dotenv::dotenv;
 use sqlx::{Pool, Sqlite};
 use sqlx::sqlite::SqlitePoolOptions;
-use tower::ServiceBuilder;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
-use jwt_auth_lib::handlers::user::auth_test::auth_test;
-use jwt_auth_lib::handlers::user::change_credentials::change_password::change_password;
-use jwt_auth_lib::handlers::user::change_credentials::change_username::change_username;
-use jwt_auth_lib::handlers::user::delete::delete_user;
-use jwt_auth_lib::handlers::user::login::login;
-use jwt_auth_lib::handlers::user::new::create_new_user;
-use jwt_auth_lib::handlers::user::refresh::access_token::refresh_access_token;
-use jwt_auth_lib::handlers::user::refresh::refresh_token::refresh_refresh_token;
-use jwt_auth_lib::middleware::user::auth::auth_middleware;
-use jwt_auth_lib::middleware::user::refresh_auth::refresh_token_auth_middleware;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
+use jwt_auth_lib::route::get_default_router;
 
 #[tokio::main]
 async fn main() {
@@ -52,40 +40,8 @@ async fn main() {
     )));
 
 
-    // set up routes
-    let pub_routes = Router::new()
-        .route("/new", post(create_new_user))
-        .route("/login", post(login))
-        .route("/refresh/refresh_token", post(refresh_refresh_token))
-        .with_state(appstate.clone());
-
-
-    let protected_routes = Router::new()
-        .route("/auth_test", get(auth_test))
-        .route("/delete", delete(delete_user))
-        .route("/change/password", put(change_password))
-        .route("/change/username", put(change_username))
-        .layer(
-            ServiceBuilder::new()
-                .layer(middleware::from_fn(auth_middleware))
-                .layer(Extension(appstate.clone()))
-        );
-
-    let refresh_token_protected_routes = Router::new()
-        .route("/refresh/access_token", get(refresh_access_token))
-        .layer(
-            ServiceBuilder::new()
-                .layer(middleware::from_fn(refresh_token_auth_middleware))
-                .layer(Extension(appstate.clone()))
-        );
-
-
-    let app = Router::new()
-        .nest("/v1/user/", protected_routes)
-        .nest("/v1/user", refresh_token_protected_routes)
-        .layer(Extension(appstate.clone()))
-        .nest("/v1/user/", pub_routes)
-        .with_state(appstate);
+    // get routes
+    let app = get_default_router(appstate, "v1");
 
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", &port)).await.unwrap();
