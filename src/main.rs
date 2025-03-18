@@ -6,6 +6,7 @@ use sqlx::{Pool, Sqlite};
 use sqlx::sqlite::SqlitePoolOptions;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use clap::Parser;
 use jwt_auth_lib::models::appstate::{Appstate, AppstateWrapper};
 use jwt_auth_lib::route::get_default_router;
 
@@ -22,7 +23,9 @@ async fn main() {
 
     // load environment
     dotenv().ok();
-    let port = env::var("PORT").unwrap_or("8000".to_string()); // default as 8000
+    let args = Args::parse();
+
+    let port = args.port;
     let jwt_secret = env::var("JWT_SECRET").unwrap();
     let cookie_secret = env::var("COOKIE_SECRET").unwrap();
     let sqlite_url = env::var("DATABASE_URL").unwrap();
@@ -49,4 +52,10 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long, default_value_t=8000)]
+    port: usize,
+}
 
