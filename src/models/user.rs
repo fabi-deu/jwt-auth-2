@@ -4,18 +4,19 @@ use crate::util::jwt::claims::Claims;
 use crate::util::jwt::refresh_token::RefreshToken;
 use argon2::{password_hash, Algorithm, Argon2, Params, PasswordHash, PasswordVerifier, Version};
 use serde::Serialize;
-use sqlx::{FromRow, Pool, Sqlite};
+use sqlx::{FromRow, Pool, Row, Sqlite};
 use std::error::Error;
 use std::sync::Arc;
 use axum::http::StatusCode;
+use sqlx::sqlite::SqliteRow;
 use uuid::Uuid;
 use crate::util::hashing::hash_password;
 use crate::util::jwt::general::Token;
 use crate::util::validation::{valid_password, valid_username};
 
-#[derive(Clone, Debug, Serialize, FromRow)]
+#[derive(Clone, Debug, Serialize)]
 pub struct User {
-    pub(crate) uuid: uuid::fmt::Hyphenated,
+    pub(crate) uuid: Uuid,
     pub(crate) username: String,
     password: String,
     pub(crate) email: String,
@@ -29,7 +30,7 @@ pub struct User {
 impl User {
     pub fn new(username: String, password: String, email: String) -> Self {
         Self {
-            uuid: Uuid::new_v4().hyphenated(),
+            uuid: Uuid::new_v4(),
             username,
             password,
             email,
@@ -183,7 +184,7 @@ impl User {
             .execute(conn.as_ref()).await?;
 
         // get new user model
-        let new_user = Self::from_uuid(self.uuid.into_uuid(), conn).await?;
+        let new_user = Self::from_uuid(self.uuid, conn).await?;
 
         // update tokenversion
         let new_user = new_user.update_tokenversion(conn).await?;
@@ -211,7 +212,7 @@ impl User {
             .bind(&self.uuid)
             .execute(conn.as_ref()).await?;
 
-        let new_user = Self::from_username(username, conn).await?;
+        let new_user = Self { username, ..self.clone() };
         Ok(new_user)
     }
 
@@ -224,5 +225,28 @@ impl User {
             .execute(conn.as_ref()).await?;
 
         Ok(Self { tokenversion: self.tokenversion + 1, ..self.clone() })
+    }
+}
+
+
+
+impl<'r> FromRow<'r, SqliteRow> for User {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+        let uuid_str: String = row.try_get("uuid")?;
+        let uuid = Uuid::parse_str(&uuid_str)
+            .map_err(|e| sqlx::Error::ColumnDecode {
+                index: String::from("uuid"),
+                source: Box::new(e)
+            })?;
+
+        Ok(User {
+            uuid,
+            username: row.try_get("username")?,
+            password: row.try_get("password")?,
+            email: row.try_get("email")?,
+            permission: row.try_get("permission")?,
+            tokenversion: row.try_get("tokenversion")?,
+            timestamp: row.try_get("timestamp")?,
+        })
     }
 }

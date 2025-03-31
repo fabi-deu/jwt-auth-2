@@ -29,7 +29,7 @@ impl Claims {
     /// * `exp` - Describes in how many minutes the token will expire
     pub fn from_user(user: &User, exp: u64) -> Self {
         Self {
-            sub: user.uuid.into_uuid(),
+            sub: user.uuid,
             tokenversion: user.tokenversion,
             iat: Utc::now().timestamp() as u64,
             exp: Utc::now().timestamp() as u64 + exp*60,

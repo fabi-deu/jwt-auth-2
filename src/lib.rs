@@ -62,7 +62,7 @@ pub mod route {
     use crate::models::appstate::AppstateWrapper;
 
 
-    /// returns the default router with all routes
+    /// returns the default router
     /// - `version`: specifies the api version | for example 'v1' or 'v2'
     pub fn get_default_router(appstate: AppstateWrapper, version: &str) -> Router {
         // public routes are accessible without any authentication or authorization
