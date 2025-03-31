@@ -58,4 +58,3 @@ struct Args {
     #[arg(short, long, default_value_t=8000)]
     port: usize,
 }
-
