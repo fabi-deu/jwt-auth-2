@@ -36,10 +36,10 @@ pub async fn change_username(
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
                 return match io_err.kind() {
                     ErrorKind::Other => Err((StatusCode::BAD_REQUEST, "Bad password")),
-                    _ => Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update password"))
+                    _ => Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update username"))
                 }
             }
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update password"))
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update username"))
         }
     }
 
