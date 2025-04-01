@@ -75,7 +75,7 @@ impl User {
     pub async fn from_uuid(uuid: Uuid, conn: &Arc<Pool<Sqlite>>) -> Result<Self, sqlx::Error> {
         let query = r"SELECT * FROM users WHERE uuid = ?";
         let user = sqlx::query_as::<_, Self>(query)
-            .bind(uuid.hyphenated().to_string())
+            .bind(uuid.to_string())
             .fetch_one(conn.as_ref())
             .await?;
         Ok(user)
@@ -102,7 +102,7 @@ impl User {
     pub async fn delete_from_db(&self, conn: &Arc<Pool<Sqlite>>) -> Result<(), sqlx::Error> {
         let query = "DELETE FROM users WHERE uuid = ?";
         let _ = sqlx::query(query)
-            .bind(&self.uuid)
+            .bind(&self.uuid.to_string())
             .execute(conn.as_ref())
             .await?;
 
@@ -180,7 +180,7 @@ impl User {
         let query = r"UPDATE users SET password = ? WHERE uuid = ?";
         let _ = sqlx::query(query)
             .bind(hashed_password.to_string())
-            .bind(&self.uuid)
+            .bind(&self.uuid.to_string())
             .execute(conn.as_ref()).await?;
 
         // get new user model
@@ -209,7 +209,7 @@ impl User {
         let query = r"UPDATE users SET username = ? WHERE uuid = ?";
         let _ = sqlx::query(query)
             .bind(&username)
-            .bind(&self.uuid)
+            .bind(&self.uuid.to_string())
             .execute(conn.as_ref()).await?;
 
         let new_user = Self { username, ..self.clone() };
@@ -221,7 +221,7 @@ impl User {
         let query = r"UPDATE users SET tokenversion = ? WHERE uuid = ?";
         let _ = sqlx::query(query)
             .bind(self.tokenversion as u32)
-            .bind(&self.uuid)
+            .bind(&self.uuid.to_string())
             .execute(conn.as_ref()).await?;
 
         Ok(Self { tokenversion: self.tokenversion + 1, ..self.clone() })
