@@ -43,7 +43,6 @@ pub async fn change_password(
         Err(e) => {
             // downcast error
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
-                println!("E: {:?}", io_err.to_string());
                 return match io_err.kind() {
                     ErrorKind::Other => Err((StatusCode::BAD_REQUEST, "Bad password")),
                     _ => Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to update password"))

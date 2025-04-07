@@ -58,6 +58,7 @@ impl User {
 
     /// gets user from db with uuid form claims
     /// DOES NOT CHECK FOR VALIDATION
+    #[inline]
     pub async fn from_claims(claims: Claims, conn: &Arc<Pool<Sqlite>>) -> Result<Self, sqlx::Error> {
         let uuid = claims.sub;
         Self::from_uuid(uuid, conn).await
